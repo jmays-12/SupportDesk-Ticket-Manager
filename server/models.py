@@ -11,9 +11,10 @@ class User(db.Model):
     name = db.Column(db.String, nullable=False)
     email = db.Column(db.String, nullable=False, unique=True)
     password_hash = db.Column(db.String, nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
 
-    assigned_tickets = db.relationship("Ticket", back_populates="assigned_user", cascade="all, delete-orphan")
+    # don't cascade delete tickets when a user is deleted, just unassign them
+    assigned_tickets = db.relationship("Ticket", back_populates="assigned_user", cascade="save-update, merge")
     ticket_notes = db.relationship("TicketNote", back_populates="user", cascade="all, delete-orphan")
 
     def __repr__(self):
@@ -27,7 +28,7 @@ class Customer(db.Model):
     name = db.Column(db.String, nullable=False)
     email = db.Column(db.String, nullable=False, unique=True)
     phone_number = db.Column(db.String)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
 
     tickets = db.relationship("Ticket", back_populates="customer", cascade="all, delete-orphan")
 
@@ -43,8 +44,8 @@ class Ticket(db.Model):
     assigned_user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=True)
     subject = db.Column(db.String, nullable=False)
     description = db.Column(db.Text, nullable=False)
-    status = db.Column(db.String, nullable=False, default="open") 
-    priority = db.Column(db.String, nullable=False, default="medium")    
+    status = db.Column(db.String, nullable=False, default="open")      # "open", "in_progress", "resolved"
+    priority = db.Column(db.String, nullable=False, default="medium")  # "low", "medium", "high"
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
 
     customer = db.relationship("Customer", back_populates="tickets")
@@ -62,7 +63,7 @@ class TicketNote(db.Model):
     ticket_id = db.Column(db.Integer, db.ForeignKey("tickets.id"), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
     content = db.Column(db.Text, nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
 
     ticket = db.relationship("Ticket", back_populates="notes")
     user = db.relationship("User", back_populates="ticket_notes")
