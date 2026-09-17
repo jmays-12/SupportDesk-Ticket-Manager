@@ -1,0 +1,65 @@
+# Python
+
+**pycache**/
+*.py[cod]
+*.pyo
+*.pyd
+
+# Virtual environment
+
+venv/
+.venv/
+env/
+
+# Environment variables / secrets
+
+.env
+.env.*
+!.env.example
+
+# Flask
+
+instance/
+
+# Node / React
+
+node_modules/
+dist/
+build/
+.vite/
+
+# Logs
+
+*.log
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+
+# IDE / Editor
+
+.vscode/
+.idea/
+
+# OS files
+
+.DS_Store
+Thumbs.db
+
+# Testing / Coverage
+
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Python packaging
+
+*.egg-info/
+.eggs/
+dist/
+build/
+
+# Local database files
+
+*.db
+*.sqlite
+*.sqlite3
