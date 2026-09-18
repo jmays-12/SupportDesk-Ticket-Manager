@@ -11,6 +11,7 @@ function Auth() {
     const [loginPassword, setLoginPassword] = useState('')
 
     const [message, setMessage] = useState('')
+    const [messageIsError, setMessageIsError] = useState(false)
 
     const handleSignup = async (event) => {
         event.preventDefault()
@@ -28,11 +29,16 @@ function Auth() {
         })
 
         const data = await response.json()
-
         if (response.ok) {
             setMessage('Account created successfully. You can now log in.')
+            setMessageIsError(false)
         } else {
-            setMessage(data.error || 'Signup failed - Please contact an administrator.')
+            setMessage(
+                data.error === 'Email already in use'
+                    ? 'That email is already in use. Please log in or use another email address.'
+                    : data.error || 'Signup failed. Please contact an administrator.'
+            )
+            setMessageIsError(true)
         }
     }
 
@@ -53,9 +59,14 @@ function Auth() {
         const data = await response.json()
 
         if (response.ok) {
-            setMessage(`Welcome back, ${data.name}!`)
+            setMessage(`Welcome back, ${data.name} !`)
+            setMessageIsError(false)
         } else {
-            setMessage(data.error || 'Login failed. Please check your login details and try again.')
+            setMessage(
+                data.error ||
+                'Login failed. Please check your login details and try again.'
+            )
+            setMessageIsError(true)
         }
     }
 
@@ -71,9 +82,15 @@ function Auth() {
                 </p>
 
                 {message && (
-                    <p className="mt-4 text-center text-sm text-gray-600">
+                    <div
+                        className={
+                            messageIsError
+                                ? 'mt-4 w-full rounded border border-red-300 bg-red-50 p-3 text-center text-sm text-red-700'
+                                : 'mt-4 w-full rounded border border-gray-200 bg-gray-50 p-3 text-center text-sm text-gray-700'
+                        }
+                    >
                         {message}
-                    </p>
+                    </div>
                 )}
 
                 {showLoginForm ? (
@@ -87,7 +104,9 @@ function Auth() {
                                 type="email"
                                 placeholder="Email"
                                 value={loginEmail}
-                                onChange={(event) => setLoginEmail(event.target.value)}
+                                onChange={(event) =>
+                                    setLoginEmail(event.target.value)
+                                }
                                 className="w-full rounded border p-2"
                             />
 
@@ -95,7 +114,9 @@ function Auth() {
                                 type="password"
                                 placeholder="Password"
                                 value={loginPassword}
-                                onChange={(event) => setLoginPassword(event.target.value)}
+                                onChange={(event) =>
+                                    setLoginPassword(event.target.value)
+                                }
                                 className="w-full rounded border p-2"
                             />
 
@@ -111,10 +132,9 @@ function Auth() {
                                 <button
                                     type="button"
                                     onClick={() => {
-
                                         setShowLoginForm(false)
                                         setMessage('')
-
+                                        setMessageIsError(false)
                                     }}
                                     className="ml-1 text-blue-600 hover:underline"
                                 >
@@ -134,7 +154,9 @@ function Auth() {
                                 type="text"
                                 placeholder="Name"
                                 value={name}
-                                onChange={(event) => setName(event.target.value)}
+                                onChange={(event) =>
+                                    setName(event.target.value)
+                                }
                                 className="w-full rounded border p-2"
                             />
 
@@ -142,7 +164,9 @@ function Auth() {
                                 type="email"
                                 placeholder="Email"
                                 value={email}
-                                onChange={(event) => setEmail(event.target.value)}
+                                onChange={(event) =>
+                                    setEmail(event.target.value)
+                                }
                                 className="w-full rounded border p-2"
                             />
 
@@ -150,7 +174,9 @@ function Auth() {
                                 type="password"
                                 placeholder="Password"
                                 value={password}
-                                onChange={(event) => setPassword(event.target.value)}
+                                onChange={(event) =>
+                                    setPassword(event.target.value)
+                                }
                                 className="w-full rounded border p-2"
                             />
 
@@ -168,6 +194,7 @@ function Auth() {
                                     onClick={() => {
                                         setShowLoginForm(true)
                                         setMessage('')
+                                        setMessageIsError(false)
                                     }}
                                     className="ml-1 text-blue-600 hover:underline"
                                 >
