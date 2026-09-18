@@ -7,13 +7,9 @@ function Dashboard() {
                     Dashboard
                 </h1>
 
-                <p className="mt-2 text-gray-600">
-                    View support tickets and manage customer issues.
-                </p>
-
                 <div className="mt-8 rounded-lg bg-white p-6 shadow">
                     <p className="text-gray-500">
-                        Dashboard content coming soon.
+                        Dashboard content placeholder.
                     </p>
                 </div>
             </div>
