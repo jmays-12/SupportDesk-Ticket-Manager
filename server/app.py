@@ -24,11 +24,6 @@ db.init_app(app)
 migrate = Migrate(app, db)
 
 
-@app.route("/api/health", methods=["GET"])
-def health_check():
-    return jsonify({"status": "api is running"}), 200
-
-
 # auth routes
 
 @app.route("/api/signup", methods=["POST"])
