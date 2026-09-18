@@ -10,6 +10,8 @@ function Auth() {
     const [loginEmail, setLoginEmail] = useState('')
     const [loginPassword, setLoginPassword] = useState('')
 
+    const [message, setMessage] = useState('')
+
     const handleSignup = async (event) => {
         event.preventDefault()
 
@@ -27,7 +29,11 @@ function Auth() {
 
         const data = await response.json()
 
-        console.log(data)
+        if (response.ok) {
+            setMessage('Account created successfully. You can now log in.')
+        } else {
+            setMessage(data.error || 'Signup failed - Please contact administrator')
+        }
     }
 
     const handleLogin = async (event) => {
@@ -59,6 +65,12 @@ function Auth() {
                 <p className="mt-2 text-center text-gray-500">
                     Manage customer tickets from one central app.
                 </p>
+
+                {message && (
+                    <p className="mt-4 text-center text-sm text-gray-600">
+                        {message}
+                    </p>
+                )}
 
                 {showLoginForm ? (
                     <form onSubmit={handleLogin} className="mt-6">
@@ -94,7 +106,12 @@ function Auth() {
                                 Don't have an account?
                                 <button
                                     type="button"
-                                    onClick={() => setShowLoginForm(false)}
+                                    onClick={() => {
+
+                                        setShowLoginForm(false)
+                                        setMessage('')
+
+                                    }}
                                     className="ml-1 text-blue-600 hover:underline"
                                 >
                                     Click here to sign up.
@@ -144,7 +161,10 @@ function Auth() {
                                 Already have an account?
                                 <button
                                     type="button"
-                                    onClick={() => setShowLoginForm(true)}
+                                    onClick={() => {
+                                        setShowLoginForm(true)
+                                        setMessage('')
+                                    }}
                                     className="ml-1 text-blue-600 hover:underline"
                                 >
                                     Log in
