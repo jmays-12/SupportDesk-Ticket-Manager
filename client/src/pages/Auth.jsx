@@ -32,7 +32,7 @@ function Auth() {
         if (response.ok) {
             setMessage('Account created successfully. You can now log in.')
         } else {
-            setMessage(data.error || 'Signup failed - Please contact administrator')
+            setMessage(data.error || 'Signup failed - Please contact an administrator.')
         }
     }
 
@@ -52,7 +52,11 @@ function Auth() {
 
         const data = await response.json()
 
-        console.log(data)
+        if (response.ok) {
+            setMessage(`Welcome back, ${data.name}!`)
+        } else {
+            setMessage(data.error || 'Login failed. Please check your login details and try again.')
+        }
     }
 
     return (
