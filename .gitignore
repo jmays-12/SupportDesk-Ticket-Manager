@@ -63,3 +63,8 @@ build/
 *.db
 *.sqlite
 *.sqlite3
+
+
+# REM
+
+pok.txt
