@@ -186,7 +186,7 @@ function Customers() {
                         <button
                             type="button"
                             onClick={() => setIsMinimized(!isMinimized)}
-                            className="flex h-8 w-8 items-center justify-center rounded border border-gray-300 text-xl text-gray-600"
+                            className="flex h-8 w-8 items-center pb-1 justify-center rounded border border-gray-300 text-xl text-gray-600"
                         >
                             {isMinimized ? '+' : '-'}
                         </button>
