@@ -20,13 +20,14 @@ function Customers() {
     const [editName, setEditName] = useState('')
     const [editEmail, setEditEmail] = useState('')
     const [editPhoneNumber, setEditPhoneNumber] = useState('')
+    const [editMessage, setEditMessage] = useState('')
 
     //regex patterns for form validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
     const phoneRegex = /^[0-9+().\-\s]+$/
 
     useEffect(() => {
-        fetch('http://127.0.0.1:5000/api/customers')
+        fetch('http://localhost:5000/api/customers')
             .then((response) => response.json())
             .then((data) => {
                 setCustomers(data)
@@ -54,7 +55,7 @@ function Customers() {
             return
         }
 
-        const response = await fetch('http://127.0.0.1:5000/api/customers', {
+        const response = await fetch('http://localhost:5000/api/customers', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -86,35 +87,31 @@ function Customers() {
         setEditName(customer.name)
         setEditEmail(customer.email)
         setEditPhoneNumber(customer.phone_number || '')
-        setMessage('')
+        setEditMessage('')
     }
 
     const handleSaveCustomer = async (customerId) => {
         if (!editName.trim()) {
-            setMessage('Name cannot be empty.')
-            setMessageIsError(true)
+            setEditMessage('Name cannot be empty.')
             return
         }
 
         if (!emailRegex.test(editEmail)) {
-            setMessage('Please enter a valid email address.')
-            setMessageIsError(true)
+            setEditMessage('Please enter a valid email address.')
             return
         }
 
         if (editPhoneNumber && !phoneRegex.test(editPhoneNumber)) {
-            setMessage('Please enter a valid phone number.')
-            setMessageIsError(true)
+            setEditMessage('Please enter a valid phone number.')
             return
         }
 
-        if (editPhoneNumber && (editPhoneNumber.replace(/\D/g, '').length < 7 || editPhoneNumber.replace(/\D/g, '').length > 15)) {
-            setMessage('Phone number must contain between 7 and 15 digits.')
-            setMessageIsError(true)
+        if (editPhoneNumber && (editPhoneNumber.replace(/\D/g, '').length < 10 || editPhoneNumber.replace(/\D/g, '').length > 15)) {
+            setEditMessage('Phone number must contain between 10 and 15 digits.')
             return
         }
 
-        const response = await fetch(`http://127.0.0.1:5000/api/customers/${customerId}`, {
+        const response = await fetch(`http://localhost:5000/api/customers/${customerId}`, {
             method: 'PATCH',
             headers: {
                 'Content-Type': 'application/json',
@@ -135,11 +132,11 @@ function Customers() {
                 )
             )
             setEditingCustomerId(null)
+            setEditMessage('')
             setMessage('Customer updated successfully.')
             setMessageIsError(false)
         } else {
-            setMessage(data.error || 'Failed to update customer.')
-            setMessageIsError(true)
+            setEditMessage(data.error || 'Failed to update customer.')
         }
     }
 
@@ -152,7 +149,7 @@ function Customers() {
             return
         }
 
-        const response = await fetch(`http://127.0.0.1:5000/api/customers/${customerId}`, {
+        const response = await fetch(`http://localhost:5000/api/customers/${customerId}`, {
             method: 'DELETE',
         })
 
@@ -291,6 +288,12 @@ function Customers() {
                                                 className="w-full rounded border p-2"
                                             />
 
+                                            {editMessage && (
+                                                <p className="text-sm text-red-600">
+                                                    {editMessage}
+                                                </p>
+                                            )}
+
                                             <div className="flex gap-2">
                                                 <button
                                                     type="button"
@@ -306,7 +309,7 @@ function Customers() {
                                                     type="button"
                                                     onClick={() => {
                                                         setEditingCustomerId(null)
-                                                        setMessage('')
+                                                        setEditMessage('')
                                                     }}
                                                     className="rounded border border-gray-300 px-4 py-2 text-gray-700"
                                                 >
@@ -361,8 +364,6 @@ function Customers() {
             </div>
         </div>
     )
-
-
 }
 
 export default Customers
