@@ -11,7 +11,7 @@ function Customers() {
     const [phoneNumber, setPhoneNumber] = useState('')
 
     const [message, setMessage] = useState('')
-    const [messageIsError, setMessageIsError] = useState(false)
+    const [createError, setCreateError] = useState('')
 
     // state manager for Add Customer form
     const [isMinimized, setIsMinimized] = useState(true)
@@ -38,20 +38,17 @@ function Customers() {
         event.preventDefault()
 
         if (!emailRegex.test(email)) {
-            setMessage('Please enter a valid email address.')
-            setMessageIsError(true)
+            setCreateError('Please enter a valid email address.')
             return
         }
 
         if (phoneNumber && !phoneRegex.test(phoneNumber)) {
-            setMessage('Please enter a valid phone number.')
-            setMessageIsError(true)
+            setCreateError('Please enter a valid phone number.')
             return
         }
 
         if (phoneNumber && (phoneNumber.replace(/\D/g, '').length < 10 || phoneNumber.replace(/\D/g, '').length > 15)) {
-            setMessage('Phone number must contain between 10 and 15 digits.')
-            setMessageIsError(true)
+            setCreateError('Phone number must contain between 10 and 15 digits.')
             return
         }
 
@@ -74,11 +71,10 @@ function Customers() {
             setName('')
             setEmail('')
             setPhoneNumber('')
+            setCreateError('')
             setMessage('Customer created successfully.')
-            setMessageIsError(false)
         } else {
-            setMessage(data.error || 'Failed to create customer.')
-            setMessageIsError(true)
+            setCreateError(data.error || 'Failed to create customer.')
         }
     }
 
@@ -134,7 +130,6 @@ function Customers() {
             setEditingCustomerId(null)
             setEditMessage('')
             setMessage('Customer updated successfully.')
-            setMessageIsError(false)
         } else {
             setEditMessage(data.error || 'Failed to update customer.')
         }
@@ -160,10 +155,8 @@ function Customers() {
                 customers.filter((customer) => customer.id !== customerId)
             )
             setMessage('Customer deleted successfully.')
-            setMessageIsError(false)
         } else {
             setMessage(data.error || 'Failed to delete customer.')
-            setMessageIsError(true)
         }
     }
 
@@ -179,13 +172,7 @@ function Customers() {
                 </p>
 
                 {message && (
-                    <div
-                        className={
-                            messageIsError
-                                ? 'rounded border border-red-300 bg-red-50 p-3 text-sm text-red-700'
-                                : 'rounded border border-gray-200 bg-gray-50 p-3 text-sm text-gray-700'
-                        }
-                    >
+                    <div className="mt-4 rounded border border-gray-200 bg-gray-50 p-3 text-sm text-gray-700">
                         {message}
                     </div>
                 )}
@@ -236,6 +223,12 @@ function Customers() {
                                 }
                                 className="w-full rounded border p-2"
                             />
+
+                            {createError && (
+                                <p className="text-sm text-red-600">
+                                    {createError}
+                                </p>
+                            )}
 
                             <button
                                 type="submit"
