@@ -64,6 +64,9 @@ build/
 *.sqlite
 *.sqlite3
 
+# Start flask and npm frontend script
+
+start.sh
 
 # REM
 

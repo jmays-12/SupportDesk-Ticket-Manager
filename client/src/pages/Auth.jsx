@@ -1,6 +1,10 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 
 function Auth() {
+
+    const navigate = useNavigate()
+
     const [showLoginForm, setShowLoginForm] = useState(true)
 
     const [name, setName] = useState('')
@@ -59,8 +63,10 @@ function Auth() {
         const data = await response.json()
 
         if (response.ok) {
-            setMessage(`Welcome back, ${data.name} !`)
-            setMessageIsError(false)
+            // changed this to simply redirect the user for website flow
+            // setMessage(`Welcome, ${data.name}`)
+            // setMessageIsError(false)
+            navigate('/dashboard')
         } else {
             setMessage(
                 data.error ||
