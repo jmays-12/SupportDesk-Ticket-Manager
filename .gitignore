@@ -67,7 +67,3 @@ build/
 # Start flask and npm frontend script
 
 start.sh
-
-# REM
-
-pok.txt
