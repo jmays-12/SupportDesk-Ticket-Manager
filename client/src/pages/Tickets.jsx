@@ -18,13 +18,12 @@ const priorityStyles = {
 
 function Tickets({ currentUser, onLogout }) {
     document.title = 'SupportDesk - Tickets'
-
+    // huge wall of states but needed to keep track of everything
     const [tickets, setTickets] = useState([])
     const [customers, setCustomers] = useState([])
     const [users, setUsers] = useState([])
     const [loading, setLoading] = useState(true)
     const [message, setMessage] = useState('')
-
     // new ticket form state
     const [showForm, setShowForm] = useState(false)
     const [subject, setSubject] = useState('')
@@ -34,17 +33,22 @@ function Tickets({ currentUser, onLogout }) {
     const [status, setStatus] = useState('open')
     const [priority, setPriority] = useState('medium')
     const [createError, setCreateError] = useState('')
-
     // edit state
     const [editingTicketId, setEditingTicketId] = useState(null)
     const [editStatus, setEditStatus] = useState('')
     const [editPriority, setEditPriority] = useState('')
     const [editAssignedUserId, setEditAssignedUserId] = useState('')
     const [editError, setEditError] = useState('')
-
-    // which ticket's notes section is expanded
+    // notes state
     const [expandedTicketId, setExpandedTicketId] = useState(null)
+    const [ticketNotes, setTicketNotes] = useState({})
+    const [noteContent, setNoteContent] = useState('')
+    const [noteError, setNoteError] = useState('')
+    const [editingNoteId, setEditingNoteId] = useState(null)
+    const [editNoteContent, setEditNoteContent] = useState('')
+    const [editNoteError, setEditNoteError] = useState('')
 
+    // helper to capitalize strings
     const capitalize = (string) => string.charAt(0).toUpperCase() + string.slice(1)
 
     useEffect(() => {
@@ -147,6 +151,11 @@ function Tickets({ currentUser, onLogout }) {
 
         if (response.ok) {
             setTickets(tickets.filter((t) => t.id !== ticketId))
+            setTicketNotes((prev) => {
+                const updated = { ...prev }
+                delete updated[ticketId]
+                return updated
+            })
             setMessage('Ticket deleted successfully.')
         } else {
             const data = await response.json()
@@ -154,8 +163,100 @@ function Tickets({ currentUser, onLogout }) {
         }
     }
 
-    const toggleNotes = (ticketId) => {
-        setExpandedTicketId(expandedTicketId === ticketId ? null : ticketId)
+    const toggleNotes = async (ticketId) => {
+        if (expandedTicketId === ticketId) {
+            setExpandedTicketId(null)
+            setNoteContent('')
+            setNoteError('')
+            return
+        }
+
+        setExpandedTicketId(ticketId)
+        setNoteContent('')
+        setNoteError('')
+
+        // only fetch notes the first time we expand this ticket
+        if (!ticketNotes[ticketId]) {
+            const response = await apiFetch(`/api/tickets/${ticketId}`)
+            const data = await response.json()
+            setTicketNotes((prev) => ({ ...prev, [ticketId]: data.notes || [] }))
+        }
+    }
+
+    const handleCreateNote = async (ticketId) => {
+        if (!noteContent.trim()) {
+            setNoteError('Note cannot be empty.')
+            return
+        }
+
+        const response = await apiFetch(`/api/tickets/${ticketId}/notes`, {
+            method: 'POST',
+            body: JSON.stringify({ content: noteContent }),
+        })
+
+        const data = await response.json()
+
+        if (response.ok) {
+            setTicketNotes((prev) => ({
+                ...prev,
+                [ticketId]: [...(prev[ticketId] || []), data],
+            }))
+            setNoteContent('')
+            setNoteError('')
+        } else {
+            setNoteError(data.error || 'Failed to add note.')
+        }
+    }
+
+    const handleEditNote = (note) => {
+        setEditingNoteId(note.id)
+        setEditNoteContent(note.content)
+        setEditNoteError('')
+    }
+
+    const handleSaveNote = async (ticketId, noteId) => {
+        if (!editNoteContent.trim()) {
+            setEditNoteError('Note cannot be empty.')
+            return
+        }
+
+        const response = await apiFetch(`/api/notes/${noteId}`, {
+            method: 'PATCH',
+            body: JSON.stringify({ content: editNoteContent }),
+        })
+
+        const data = await response.json()
+
+        if (response.ok) {
+            setTicketNotes((prev) => ({
+                ...prev,
+                [ticketId]: prev[ticketId].map((n) => (n.id === noteId ? data : n)),
+            }))
+            setEditingNoteId(null)
+            setEditNoteError('')
+        } else {
+            setEditNoteError(data.error || 'Failed to update note.')
+        }
+    }
+
+    const handleDeleteNote = async (ticketId, noteId) => {
+        const confirmed = window.confirm('Are you sure you want to delete this note?')
+
+        if (!confirmed) return
+
+        const response = await apiFetch(`/api/notes/${noteId}`, {
+            method: 'DELETE',
+        })
+
+        if (response.ok) {
+            setTicketNotes((prev) => ({
+                ...prev,
+                [ticketId]: prev[ticketId].filter((n) => n.id !== noteId),
+            }))
+        } else {
+            const data = await response.json()
+            setNoteError(data.error || 'Failed to delete note.')
+        }
     }
 
     return (
@@ -189,15 +290,11 @@ function Tickets({ currentUser, onLogout }) {
 
                 {showForm && (
                     <div className="mt-6 rounded-lg bg-white p-6 shadow">
-                        <h2 className="mb-4 text-lg font-semibold text-gray-900">
-                            New Ticket
-                        </h2>
+                        <h2 className="mb-4 text-lg font-semibold text-gray-900">New Ticket</h2>
 
                         <form onSubmit={handleCreateTicket} className="space-y-4">
                             <div>
-                                <label className="mb-1 block text-sm font-medium text-gray-700">
-                                    Subject
-                                </label>
+                                <label className="mb-1 block text-sm font-medium text-gray-700">Subject</label>
                                 <input
                                     type="text"
                                     value={subject}
@@ -209,9 +306,7 @@ function Tickets({ currentUser, onLogout }) {
                             </div>
 
                             <div>
-                                <label className="mb-1 block text-sm font-medium text-gray-700">
-                                    Description
-                                </label>
+                                <label className="mb-1 block text-sm font-medium text-gray-700">Description</label>
                                 <textarea
                                     value={description}
                                     onChange={(e) => setDescription(e.target.value)}
@@ -224,9 +319,7 @@ function Tickets({ currentUser, onLogout }) {
 
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
-                                    <label className="mb-1 block text-sm font-medium text-gray-700">
-                                        Customer
-                                    </label>
+                                    <label className="mb-1 block text-sm font-medium text-gray-700">Customer</label>
                                     <select
                                         value={customerId}
                                         onChange={(e) => setCustomerId(e.target.value)}
@@ -242,9 +335,7 @@ function Tickets({ currentUser, onLogout }) {
                                 </div>
 
                                 <div>
-                                    <label className="mb-1 block text-sm font-medium text-gray-700">
-                                        Assign To
-                                    </label>
+                                    <label className="mb-1 block text-sm font-medium text-gray-700">Assign To</label>
                                     <select
                                         value={assignedUserId}
                                         onChange={(e) => setAssignedUserId(e.target.value)}
@@ -260,9 +351,7 @@ function Tickets({ currentUser, onLogout }) {
                                 </div>
 
                                 <div>
-                                    <label className="mb-1 block text-sm font-medium text-gray-700">
-                                        Status
-                                    </label>
+                                    <label className="mb-1 block text-sm font-medium text-gray-700">Current Status</label>
                                     <select
                                         value={status}
                                         onChange={(e) => setStatus(e.target.value)}
@@ -274,9 +363,7 @@ function Tickets({ currentUser, onLogout }) {
                                 </div>
 
                                 <div>
-                                    <label className="mb-1 block text-sm font-medium text-gray-700">
-                                        Priority
-                                    </label>
+                                    <label className="mb-1 block text-sm font-medium text-gray-700">Priority</label>
                                     <select
                                         value={priority}
                                         onChange={(e) => setPriority(e.target.value)}
@@ -328,12 +415,9 @@ function Tickets({ currentUser, onLogout }) {
                                             </p>
 
                                             {editingTicketId === ticket.id ? (
-                                                // inline dropdowns replace the read-only fields when editing
                                                 <div className="mt-3 grid grid-cols-3 gap-3">
                                                     <div>
-                                                        <label className="mb-1 block text-xs font-medium text-gray-500">
-                                                            Current Status
-                                                        </label>
+                                                        <label className="mb-1 block text-xs font-medium text-gray-500">Status</label>
                                                         <select
                                                             value={editStatus}
                                                             onChange={(e) => setEditStatus(e.target.value)}
@@ -346,9 +430,7 @@ function Tickets({ currentUser, onLogout }) {
                                                     </div>
 
                                                     <div>
-                                                        <label className="mb-1 block text-xs font-medium text-gray-500">
-                                                            Priority
-                                                        </label>
+                                                        <label className="mb-1 block text-xs font-medium text-gray-500">Priority</label>
                                                         <select
                                                             value={editPriority}
                                                             onChange={(e) => setEditPriority(e.target.value)}
@@ -362,9 +444,7 @@ function Tickets({ currentUser, onLogout }) {
                                                     </div>
 
                                                     <div>
-                                                        <label className="mb-1 block text-xs font-medium text-gray-500">
-                                                            Assigned To
-                                                        </label>
+                                                        <label className="mb-1 block text-xs font-medium text-gray-500">Assigned To</label>
                                                         <select
                                                             value={editAssignedUserId}
                                                             onChange={(e) => setEditAssignedUserId(e.target.value)}
@@ -380,13 +460,10 @@ function Tickets({ currentUser, onLogout }) {
                                                     </div>
 
                                                     {editError && (
-                                                        <p className="col-span-3 text-sm text-red-600">
-                                                            {editError}
-                                                        </p>
+                                                        <p className="col-span-3 text-sm text-red-600">{editError}</p>
                                                     )}
                                                 </div>
                                             ) : (
-                                                // read-only view
                                                 ticket.assigned_user_name && (
                                                     <p className="text-sm text-gray-500">
                                                         Assigned to: {ticket.assigned_user_name}
@@ -464,10 +541,106 @@ function Tickets({ currentUser, onLogout }) {
                                     </div>
 
                                     {expandedTicketId === ticket.id && (
-                                        <div className="mt-3">
-                                            <p className="text-sm text-gray-400">
-                                                No notes yet.
-                                            </p>
+                                        <div className="mt-4 space-y-3 border-t pt-4">
+                                            <h3 className="text-sm font-medium text-gray-700">Notes</h3>
+
+                                            {(ticketNotes[ticket.id] || []).length === 0 ? (
+                                                <p className="text-sm text-gray-400">No notes yet.</p>
+                                            ) : (
+                                                <div className="space-y-3">
+                                                    {(ticketNotes[ticket.id] || []).map((note) => (
+                                                        <div key={note.id} className="rounded border bg-gray-50 p-3">
+                                                            {editingNoteId === note.id ? (
+                                                                <div className="space-y-2">
+                                                                    <textarea
+                                                                        value={editNoteContent}
+                                                                        onChange={(e) => setEditNoteContent(e.target.value)}
+                                                                        className="w-full rounded border bg-white p-2 text-sm"
+                                                                        rows={3}
+                                                                    />
+
+                                                                    {editNoteError && (
+                                                                        <p className="text-sm text-red-600">{editNoteError}</p>
+                                                                    )}
+
+                                                                    <div className="flex gap-2">
+                                                                        <button
+                                                                            type="button"
+                                                                            onClick={() => handleSaveNote(ticket.id, note.id)}
+                                                                            className="rounded bg-blue-600 px-3 py-1 text-sm text-white hover:bg-blue-700"
+                                                                        >
+                                                                            Save
+                                                                        </button>
+
+                                                                        <button
+                                                                            type="button"
+                                                                            onClick={() => {
+                                                                                setEditingNoteId(null)
+                                                                                setEditNoteError('')
+                                                                            }}
+                                                                            className="rounded border border-gray-300 px-3 py-1 text-sm text-gray-700 hover:bg-gray-100"
+                                                                        >
+                                                                            Cancel
+                                                                        </button>
+                                                                    </div>
+                                                                </div>
+                                                            ) : (
+                                                                <>
+                                                                    <p className="text-sm text-gray-800">{note.content}</p>
+
+                                                                    <div className="mt-2 flex items-center justify-between">
+                                                                        <p className="text-xs text-gray-400">
+                                                                            {note.user_name} &middot; {new Date(note.created_at).toLocaleString()}
+                                                                        </p>
+
+                                                                        {note.user_id === currentUser.id && (
+                                                                            <div className="flex gap-2">
+                                                                                <button
+                                                                                    type="button"
+                                                                                    onClick={() => handleEditNote(note)}
+                                                                                    className="text-xs text-gray-500 hover:text-gray-700"
+                                                                                >
+                                                                                    Edit
+                                                                                </button>
+
+                                                                                <button
+                                                                                    type="button"
+                                                                                    onClick={() => handleDeleteNote(ticket.id, note.id)}
+                                                                                    className="text-xs text-red-500 hover:text-red-700"
+                                                                                >
+                                                                                    Delete
+                                                                                </button>
+                                                                            </div>
+                                                                        )}
+                                                                    </div>
+                                                                </>
+                                                            )}
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            )}
+
+                                            <div className="mt-3 space-y-2">
+                                                <textarea
+                                                    value={noteContent}
+                                                    onChange={(e) => setNoteContent(e.target.value)}
+                                                    className="w-full rounded border p-2 text-sm"
+                                                    rows={2}
+                                                    placeholder="Add a note..."
+                                                />
+
+                                                {noteError && (
+                                                    <p className="text-sm text-red-600">{noteError}</p>
+                                                )}
+
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleCreateNote(ticket.id)}
+                                                    className="rounded bg-blue-600 px-3 py-1 text-sm text-white hover:bg-blue-700"
+                                                >
+                                                    Add Note
+                                                </button>
+                                            </div>
                                         </div>
                                     )}
                                 </div>
