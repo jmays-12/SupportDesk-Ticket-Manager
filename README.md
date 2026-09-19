@@ -76,8 +76,10 @@ python seed.py
 This creates test accounts, tickets, ticketnotes and customers.
 
 The test account login is:
-Email: test@test.com
-Password: test
+```
+email: test@test.com
+password: test
+```
 
 
 8. Start the Flask server
