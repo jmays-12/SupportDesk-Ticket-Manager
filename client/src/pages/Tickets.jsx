@@ -33,6 +33,13 @@ function Tickets() {
     const [priority, setPriority] = useState('medium')
     const [createError, setCreateError] = useState('')
 
+    // edit state
+    const [editingTicketId, setEditingTicketId] = useState(null)
+    const [editStatus, setEditStatus] = useState('')
+    const [editPriority, setEditPriority] = useState('')
+    const [editAssignedUserId, setEditAssignedUserId] = useState('')
+    const [editError, setEditError] = useState('')
+
     // which ticket's notes section is expanded
     const [expandedTicketId, setExpandedTicketId] = useState(null)
 
@@ -93,6 +100,55 @@ function Tickets() {
             setMessage('Ticket created successfully.')
         } else {
             setCreateError(data.error || 'Failed to create ticket.')
+        }
+    }
+
+    const handleEditTicket = (ticket) => {
+        setEditingTicketId(ticket.id)
+        setEditStatus(ticket.status)
+        setEditPriority(ticket.priority)
+        setEditAssignedUserId(ticket.assigned_user_id ?? '')
+        setEditError('')
+    }
+
+    const handleSaveTicket = async (ticketId) => {
+        const response = await fetch(`http://localhost:5000/api/tickets/${ticketId}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                status: editStatus,
+                priority: editPriority,
+                assigned_user_id: editAssignedUserId ? parseInt(editAssignedUserId) : null,
+            }),
+        })
+
+        const data = await response.json()
+
+        if (response.ok) {
+            setTickets(tickets.map((t) => (t.id === ticketId ? { ...t, ...data } : t)))
+            setEditingTicketId(null)
+            setEditError('')
+            setMessage('Ticket updated successfully.')
+        } else {
+            setEditError(data.error || 'Failed to update ticket.')
+        }
+    }
+
+    const handleDeleteTicket = async (ticketId) => {
+        const confirmed = window.confirm('Are you sure you want to delete this ticket?')
+
+        if (!confirmed) return
+
+        const response = await fetch(`http://localhost:5000/api/tickets/${ticketId}`, {
+            method: 'DELETE',
+        })
+
+        if (response.ok) {
+            setTickets(tickets.filter((t) => t.id !== ticketId))
+            setMessage('Ticket deleted successfully.')
+        } else {
+            const data = await response.json()
+            setMessage(data.error || 'Failed to delete ticket.')
         }
     }
 
@@ -212,7 +268,6 @@ function Tickets() {
                                     >
                                         <option value="open">Open</option>
                                         <option value="in_progress">In Progress</option>
-                                        <option value="resolved">Resolved</option>
                                     </select>
                                 </div>
 
@@ -251,13 +306,13 @@ function Tickets() {
                     {loading ? (
                         <p className="text-gray-500">Loading tickets...</p>
                     ) : tickets.length === 0 ? (
-                        <p className="text-gray-500">No tickets found!</p>
+                        <p className="text-gray-500">No tickets yet.</p>
                     ) : (
                         <div className="space-y-4">
                             {tickets.map((ticket) => (
                                 <div key={ticket.id} className="rounded border p-4">
                                     <div className="flex items-start justify-between gap-4">
-                                        <div>
+                                        <div className="flex-1">
                                             <h2 className="font-semibold text-gray-900">
                                                 {ticket.subject}
                                             </h2>
@@ -270,43 +325,149 @@ function Tickets() {
                                                 Customer: {ticket.customer_name}
                                             </p>
 
-                                            {ticket.assigned_user_name && (
-                                                <p className="text-sm text-gray-500">
-                                                    Assigned to: {ticket.assigned_user_name}
-                                                </p>
+                                            {editingTicketId === ticket.id ? (
+                                                // inline dropdowns replace the read-only fields when editing
+                                                <div className="mt-3 grid grid-cols-3 gap-3">
+                                                    <div>
+                                                        <label className="mb-1 block text-xs font-medium text-gray-500">
+                                                            Status
+                                                        </label>
+                                                        <select
+                                                            value={editStatus}
+                                                            onChange={(e) => setEditStatus(e.target.value)}
+                                                            className="w-full rounded border p-1.5 text-sm"
+                                                        >
+                                                            <option value="open">Open</option>
+                                                            <option value="in_progress">In Progress</option>
+                                                            <option value="resolved">Resolved</option>
+                                                        </select>
+                                                    </div>
+
+                                                    <div>
+                                                        <label className="mb-1 block text-xs font-medium text-gray-500">
+                                                            Priority
+                                                        </label>
+                                                        <select
+                                                            value={editPriority}
+                                                            onChange={(e) => setEditPriority(e.target.value)}
+                                                            className="w-full rounded border p-1.5 text-sm"
+                                                        >
+                                                            <option value="low">Low</option>
+                                                            <option value="medium">Medium</option>
+                                                            <option value="high">High</option>
+                                                            <option value="critical">Critical</option>
+                                                        </select>
+                                                    </div>
+
+                                                    <div>
+                                                        <label className="mb-1 block text-xs font-medium text-gray-500">
+                                                            Assigned To
+                                                        </label>
+                                                        <select
+                                                            value={editAssignedUserId}
+                                                            onChange={(e) => setEditAssignedUserId(e.target.value)}
+                                                            className="w-full rounded border p-1.5 text-sm"
+                                                        >
+                                                            <option value="">Unassigned</option>
+                                                            {users.map((user) => (
+                                                                <option key={user.id} value={user.id}>
+                                                                    {user.name}
+                                                                </option>
+                                                            ))}
+                                                        </select>
+                                                    </div>
+
+                                                    {editError && (
+                                                        <p className="col-span-3 text-sm text-red-600">
+                                                            {editError}
+                                                        </p>
+                                                    )}
+                                                </div>
+                                            ) : (
+                                                // read-only view
+                                                ticket.assigned_user_name && (
+                                                    <p className="text-sm text-gray-500">
+                                                        Assigned to: {ticket.assigned_user_name}
+                                                    </p>
+                                                )
                                             )}
                                         </div>
 
                                         <div className="flex shrink-0 flex-col items-end gap-2">
-                                            <span className={`rounded border px-2 py-1 text-xs ${statusStyles[ticket.status]}`}>
-                                                {ticket.status.replace('_', ' ')}
-                                            </span>
+                                            {editingTicketId !== ticket.id && (
+                                                <>
+                                                    <span className={`rounded border px-2 py-1 text-xs ${statusStyles[ticket.status]}`}>
+                                                        {ticket.status.replace('_', ' ')}
+                                                    </span>
 
-                                            <span className={`rounded border px-2 py-1 text-xs ${priorityStyles[ticket.priority]}`}>
-                                                {ticket.priority}
-                                            </span>
+                                                    <span className={`rounded border px-2 py-1 text-xs ${priorityStyles[ticket.priority]}`}>
+                                                        {ticket.priority}
+                                                    </span>
+                                                </>
+                                            )}
                                         </div>
                                     </div>
 
-                                    <div className="mt-3 border-t pt-3">
+                                    <div className="mt-3 flex items-center justify-between border-t pt-3">
                                         <button
                                             type="button"
                                             onClick={() => toggleNotes(ticket.id)}
                                             className="text-sm text-gray-500 hover:text-gray-700"
                                         >
-                                            {expandedTicketId === ticket.id
-                                                ? 'Hide notes'
-                                                : 'Show notes'}
+                                            {expandedTicketId === ticket.id ? 'Hide notes' : 'Show notes'}
                                         </button>
 
-                                        {expandedTicketId === ticket.id && (
-                                            <div className="mt-3">
-                                                <p className="text-sm text-gray-400">
-                                                    No notes yet.
-                                                </p>
-                                            </div>
-                                        )}
+                                        <div className="flex gap-2">
+                                            {editingTicketId === ticket.id ? (
+                                                <>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleSaveTicket(ticket.id)}
+                                                        className="rounded bg-blue-600 px-3 py-1 text-sm text-white hover:bg-blue-700"
+                                                    >
+                                                        Save
+                                                    </button>
+
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => {
+                                                            setEditingTicketId(null)
+                                                            setEditError('')
+                                                        }}
+                                                        className="rounded border border-gray-300 px-3 py-1 text-sm text-gray-700 hover:bg-gray-100"
+                                                    >
+                                                        Cancel
+                                                    </button>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleEditTicket(ticket)}
+                                                        className="rounded border border-gray-300 px-3 py-1 text-sm text-gray-700 hover:bg-gray-100"
+                                                    >
+                                                        Edit
+                                                    </button>
+
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleDeleteTicket(ticket.id)}
+                                                        className="rounded border border-red-300 px-3 py-1 text-sm text-red-600 hover:bg-red-50"
+                                                    >
+                                                        Delete
+                                                    </button>
+                                                </>
+                                            )}
+                                        </div>
                                     </div>
+
+                                    {expandedTicketId === ticket.id && (
+                                        <div className="mt-3">
+                                            <p className="text-sm text-gray-400">
+                                                No notes yet.
+                                            </p>
+                                        </div>
+                                    )}
                                 </div>
                             ))}
                         </div>
