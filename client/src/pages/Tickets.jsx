@@ -404,7 +404,7 @@ function Tickets({ currentUser, onLogout }) {
                                                 {ticket.subject}
                                             </h2>
 
-                                            <p className="mt-1 text-sm text-gray-600 capitalize">
+                                            <p className="mt-1 text-sm text-gray-600">
                                                 {ticket.description}
                                             </p>
 

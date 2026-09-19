@@ -117,7 +117,7 @@ def seed_database():
             Ticket(
                 subject="How do I change my email?",
                 description="I need to update my email address",
-                status="closed",
+                status="resolved",
                 priority="low",
                 customer_id=customer5.id,
                 assigned_user_id=None

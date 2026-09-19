@@ -30,11 +30,11 @@ function Dashboard({ currentUser, onLogout }) {
     }, [])
 
     const openTickets = tickets.filter(
-        (ticket) => ticket.status !== 'closed'
+        (ticket) => ticket.status !== 'resolved'
     ).length
 
-    const closedTickets = tickets.filter(
-        (ticket) => ticket.status === 'closed'
+    const resolvedTickets = tickets.filter(
+        (ticket) => ticket.status === 'resolved'
     ).length
 
     const criticalPriorityTickets = tickets.filter(
@@ -76,11 +76,11 @@ function Dashboard({ currentUser, onLogout }) {
 
                     <div className="rounded-lg bg-white p-6 shadow">
                         <p className="text-med text-center font-medium text-gray-900">
-                            Closed Tickets
+                            Resolved Tickets
                         </p>
 
                         <p className="mt-2 text-3xl text-center font-bold text-gray-500">
-                            {loading ? '-' : closedTickets}
+                            {loading ? '-' : resolvedTickets}
                         </p>
                     </div>
                 </div>

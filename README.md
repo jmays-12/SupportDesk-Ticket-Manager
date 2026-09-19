@@ -68,10 +68,22 @@ createdb supportdesk
 flask db upgrade
 ```
 
-7. Start the Flask server
+7. (Optional) Seed database with sample data
 
 ```
-flask run
+python seed.py
+```
+This creates test accounts, tickets, ticketnotes and customers.
+
+The test account login is:
+Email: test@test.com
+Password: test
+
+
+8. Start the Flask server
+
+```
+python app.py
 ```
 
 The backend will be running at `http://localhost:5000`.
@@ -98,7 +110,8 @@ npm run dev
 
 The frontend will be running at `http://localhost:5173`.
 
-## API Endpoints
+## API Endpoints 
+Protected endpoints require a valid JWT access token in the Authorization header.
 
 ### Auth
 - `POST /api/signup` - create a new user account
@@ -129,9 +142,18 @@ The frontend will be running at `http://localhost:5173`.
 
 ```
 supportdesk/
-  client/         React frontend
-  server/         Flask backend
-    app.py        API routes
-    models.py     Database models
-    migrations/   Alembic migration files
+  client/             React frontend
+    components/
+      NavBar.jsx      Navigation bar
+    pages/
+      Auth.jsx        Handles signup and login
+      Customers.jsx   Customer list view
+      Dashboard.jsx   Ticket summary and recent tickets
+      Tickets.jsx     Ticket list and management
+    api.js            API helper function
+  server/             Flask backend
+    app.py            API routes
+    models.py         Database models
+    migrations/       Alembic migration files
+    seed.py           Sample data for testing
 ```
