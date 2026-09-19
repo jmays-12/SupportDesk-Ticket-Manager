@@ -50,47 +50,44 @@ function Dashboard({ currentUser, onLogout }) {
                     <h1 className="text-3xl font-bold text-gray-900">
                         Welcome, {currentUser?.name || 'User'}
                     </h1>
-
-                    <p className="mt-1 text-gray-600">
-                        Here's an overview of your support desk.
-                    </p>
                 </div>
 
                 {/* stats */}
                 <div className="mt-8 grid gap-6 sm:grid-cols-3">
                     <div className="rounded-lg bg-white p-6 shadow">
-                        <p className="text-sm font-medium text-gray-500">
+                        <p className="text-med text-center font-medium text-gray-900">
                             Open Tickets
                         </p>
 
-                        <p className="mt-2 text-3xl font-bold text-gray-900">
+                        <p className="mt-2 text-3xl text-center font-bold text-gray-500">
                             {loading ? '-' : openTickets}
                         </p>
                     </div>
 
                     <div className="rounded-lg bg-white p-6 shadow">
-                        <p className="text-sm font-medium text-gray-500">
+                        <p className="text-med text-center font-medium text-gray-900">
                             Critical Priority
                         </p>
 
-                        <p className="mt-2 text-3xl font-bold text-red-600">
+                        <p className="mt-2 text-3xl text-center font-bold text-red-600">
                             {loading ? '-' : criticalPriorityTickets}
                         </p>
                     </div>
 
                     <div className="rounded-lg bg-white p-6 shadow">
-                        <p className="text-sm font-medium text-gray-500">
+                        <p className="text-med text-center font-medium text-gray-900">
                             Closed Tickets
                         </p>
 
-                        <p className="mt-2 text-3xl font-bold text-green-600">
+                        <p className="mt-2 text-3xl text-center font-bold text-gray-500">
                             {loading ? '-' : closedTickets}
                         </p>
                     </div>
                 </div>
 
                 {/* quick actions */}
-                <div className="mt-8 rounded-lg bg-white p-6 shadow">
+                {/* will be re-implemented later when theres more things to put here */}
+                {/*<div className="mt-8 rounded-lg bg-white p-6 shadow">
                     <h2 className="text-xl font-semibold text-gray-900">
                         Quick Actions
                     </h2>
@@ -103,14 +100,9 @@ function Dashboard({ currentUser, onLogout }) {
                             View Tickets
                         </Link>
 
-                        <Link
-                            to="/tickets"
-                            className="rounded-md border border-gray-300 bg-white px-4 py-2 font-medium text-gray-700 hover:bg-gray-50"
-                        >
-                            Manage Tickets
-                        </Link>
                     </div>
                 </div>
+                */}
 
                 {/* recent tickets */}
                 <div className="mt-8 rounded-lg bg-white p-6 shadow">
