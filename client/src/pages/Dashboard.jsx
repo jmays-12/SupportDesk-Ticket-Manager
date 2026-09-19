@@ -1,8 +1,11 @@
+import Navbar from '../components/Navbar.jsx'
+
 function Dashboard() {
     document.title = "SupportDesk - Dashboard"
     return (
-        <div className="min-h-screen bg-gray-100 p-8">
-            <div className="mx-auto max-w-6xl">
+        <div className="min-h-screen bg-gray-100">
+            <Navbar />
+            <div className="mx-auto max-w-6xl pt-4">
                 <h1 className="text-3xl font-bold text-gray-900">
                     Dashboard
                 </h1>

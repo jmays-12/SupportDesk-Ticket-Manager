@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import Navbar from '../components/Navbar'
 
 function Customers() {
 
@@ -161,9 +162,10 @@ function Customers() {
     }
 
     return (
-        <div className="min-h-screen bg-gray-100 p-8">
+        <div className="min-h-screen bg-gray-100">
+            <Navbar />
             <div className="mx-auto max-w-6xl">
-                <h1 className="text-3xl font-bold text-gray-900">
+                <h1 className="text-3xl font-bold text-gray-900 pt-4">
                     Customers
                 </h1>
 
