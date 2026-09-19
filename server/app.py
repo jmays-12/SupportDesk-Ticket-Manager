@@ -1,4 +1,3 @@
-
 import os
 
 from dotenv import load_dotenv
@@ -7,7 +6,7 @@ from flask_bcrypt import Bcrypt
 from flask_cors import CORS
 from flask_migrate import Migrate
 
-from models import db, User, Customer, Ticket
+from models import db, User, Customer, Ticket, TicketNote
 
 
 load_dotenv()
@@ -134,9 +133,7 @@ def update_customer(id):
         if not data["email"]:
             return jsonify({"error": "Email cannot be empty"}), 400
 
-        existing_customer = Customer.query.filter_by(
-            email=data["email"]
-        ).first()
+        existing_customer = Customer.query.filter_by(email=data["email"]).first()
 
         if existing_customer and existing_customer.id != customer.id:
             return jsonify({"error": "Customer email already in use"}), 409
@@ -167,6 +164,243 @@ def delete_customer(id):
     db.session.commit()
 
     return jsonify({"message": "Customer deleted successfully"}), 200
+
+
+# ticket routes
+
+@app.route("/api/tickets", methods=["GET"])
+def get_tickets():
+    tickets = Ticket.query.order_by(Ticket.id).all()
+
+    return jsonify([
+        {
+            "id": ticket.id,
+            "subject": ticket.subject,
+            "description": ticket.description,
+            "status": ticket.status,
+            "priority": ticket.priority,
+            "customer_id": ticket.customer_id,
+            "customer_name": ticket.customer.name,
+            "assigned_user_id": ticket.assigned_user_id,
+            "assigned_user_name": ticket.assigned_user.name if ticket.assigned_user else None,
+            "created_at": ticket.created_at.isoformat()
+        }
+        for ticket in tickets
+    ]), 200
+
+
+@app.route("/api/tickets/<int:id>", methods=["GET"])
+def get_ticket(id):
+    ticket = db.session.get(Ticket, id)
+
+    if not ticket:
+        return jsonify({"error": "Ticket not found"}), 404
+
+    return jsonify({
+        "id": ticket.id,
+        "subject": ticket.subject,
+        "description": ticket.description,
+        "status": ticket.status,
+        "priority": ticket.priority,
+        "customer_id": ticket.customer_id,
+        "customer_name": ticket.customer.name,
+        "assigned_user_id": ticket.assigned_user_id,
+        "assigned_user_name": ticket.assigned_user.name if ticket.assigned_user else None,
+        "created_at": ticket.created_at.isoformat(),
+        "notes": [
+            {
+                "id": note.id,
+                "content": note.content,
+                "user_id": note.user_id,
+                "user_name": note.user.name,
+                "created_at": note.created_at.isoformat()
+            }
+            for note in ticket.notes
+        ]
+    }), 200
+
+
+@app.route("/api/tickets", methods=["POST"])
+def create_ticket():
+    data = request.get_json()
+
+    if not data.get("subject") or not data.get("description") or not data.get("customer_id"):
+        return jsonify({"error": "Subject, description, and customer_id are required"}), 400
+
+    if not db.session.get(Customer, data["customer_id"]):
+        return jsonify({"error": "Customer not found"}), 404
+
+    if data.get("assigned_user_id") and not db.session.get(User, data["assigned_user_id"]):
+        return jsonify({"error": "Assigned user not found"}), 404
+
+    try:
+        ticket = Ticket(
+            subject=data["subject"],
+            description=data["description"],
+            customer_id=data["customer_id"],
+            assigned_user_id=data.get("assigned_user_id"),
+            status=data.get("status", "open"),
+            priority=data.get("priority", "medium")
+        )
+        db.session.add(ticket)
+        db.session.commit()
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
+
+    return jsonify({
+        "id": ticket.id,
+        "subject": ticket.subject,
+        "status": ticket.status,
+        "priority": ticket.priority,
+        "customer_id": ticket.customer_id,
+        "assigned_user_id": ticket.assigned_user_id
+    }), 201
+
+
+@app.route("/api/tickets/<int:id>", methods=["PATCH"])
+def update_ticket(id):
+    ticket = db.session.get(Ticket, id)
+
+    if not ticket:
+        return jsonify({"error": "Ticket not found"}), 404
+
+    data = request.get_json()
+
+    if "subject" in data:
+        if not data["subject"]:
+            return jsonify({"error": "Subject cannot be empty"}), 400
+        ticket.subject = data["subject"]
+
+    if "description" in data:
+        if not data["description"]:
+            return jsonify({"error": "Description cannot be empty"}), 400
+        ticket.description = data["description"]
+
+    if "assigned_user_id" in data:
+        if data["assigned_user_id"] and not db.session.get(User, data["assigned_user_id"]):
+            return jsonify({"error": "Assigned user not found"}), 404
+        ticket.assigned_user_id = data["assigned_user_id"]
+
+    # let the model validators handle status and priority
+    try:
+        if "status" in data:
+            ticket.status = data["status"]
+        if "priority" in data:
+            ticket.priority = data["priority"]
+        db.session.commit()
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
+
+    return jsonify({
+        "id": ticket.id,
+        "subject": ticket.subject,
+        "description": ticket.description,
+        "status": ticket.status,
+        "priority": ticket.priority,
+        "customer_id": ticket.customer_id,
+        "assigned_user_id": ticket.assigned_user_id
+    }), 200
+
+
+@app.route("/api/tickets/<int:id>", methods=["DELETE"])
+def delete_ticket(id):
+    ticket = db.session.get(Ticket, id)
+
+    if not ticket:
+        return jsonify({"error": "Ticket not found"}), 404
+
+    db.session.delete(ticket)
+    db.session.commit()
+
+    return jsonify({"message": "Ticket deleted successfully"}), 200
+
+
+# ticket note routes
+
+@app.route("/api/tickets/<int:id>/notes", methods=["POST"])
+def create_ticket_note(id):
+    ticket = db.session.get(Ticket, id)
+
+    if not ticket:
+        return jsonify({"error": "Ticket not found"}), 404
+
+    data = request.get_json()
+
+    if not data.get("content") or not data.get("user_id"):
+        return jsonify({"error": "Content and user_id are required"}), 400
+
+    if not db.session.get(User, data["user_id"]):
+        return jsonify({"error": "User not found"}), 404
+
+    note = TicketNote(
+        ticket_id=id,
+        user_id=data["user_id"],
+        content=data["content"]
+    )
+
+    db.session.add(note)
+    db.session.commit()
+
+    return jsonify({
+        "id": note.id,
+        "content": note.content,
+        "user_id": note.user_id,
+        "user_name": note.user.name,
+        "created_at": note.created_at.isoformat()
+    }), 201
+
+
+@app.route("/api/notes/<int:id>", methods=["PATCH"])
+def update_ticket_note(id):
+    note = db.session.get(TicketNote, id)
+
+    if not note:
+        return jsonify({"error": "Note not found"}), 404
+
+    data = request.get_json()
+
+    if not data.get("content"):
+        return jsonify({"error": "Content cannot be empty"}), 400
+
+    note.content = data["content"]
+    db.session.commit()
+
+    return jsonify({
+        "id": note.id,
+        "content": note.content,
+        "user_id": note.user_id,
+        "user_name": note.user.name,
+        "created_at": note.created_at.isoformat()
+    }), 200
+
+
+@app.route("/api/notes/<int:id>", methods=["DELETE"])
+def delete_ticket_note(id):
+    note = db.session.get(TicketNote, id)
+
+    if not note:
+        return jsonify({"error": "Note not found"}), 404
+
+    db.session.delete(note)
+    db.session.commit()
+
+    return jsonify({"message": "Note deleted successfully"}), 200
+
+
+# user routes (used for the assign ticket dropdown)
+
+@app.route("/api/users", methods=["GET"])
+def get_users():
+    users = User.query.order_by(User.name).all()
+
+    return jsonify([
+        {
+            "id": user.id,
+            "name": user.name,
+            "email": user.email
+        }
+        for user in users
+    ]), 200
 
 
 if __name__ == "__main__":
