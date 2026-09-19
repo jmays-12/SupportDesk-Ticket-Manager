@@ -5,6 +5,7 @@ from flask import Flask, jsonify, request
 from flask_bcrypt import Bcrypt
 from flask_cors import CORS
 from flask_migrate import Migrate
+from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
 
 from models import db, User, Customer, Ticket, TicketNote
 
@@ -15,10 +16,11 @@ app = Flask(__name__)
 
 app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("DATABASE_URL")
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-app.config["SECRET_KEY"] = os.getenv("SECRET_KEY")
+app.config["JWT_SECRET_KEY"] = os.getenv("JWT_SECRET_KEY")
 
 CORS(app)
 bcrypt = Bcrypt(app)
+jwt = JWTManager(app)
 
 db.init_app(app)
 migrate = Migrate(app, db)
@@ -64,16 +66,40 @@ def login():
     ):
         return jsonify({"error": "Invalid email or password"}), 401
 
+    # store user id as the identity in the token
+    token = create_access_token(identity=str(user.id))
+
     return jsonify({
-        "id": user.id,
-        "name": user.name,
-        "email": user.email
+        "token": token,
+        "user": {
+            "id": user.id,
+            "name": user.name,
+            "email": user.email
+        }
     }), 200
+
+
+# user routes
+
+@app.route("/api/users", methods=["GET"])
+@jwt_required()
+def get_users():
+    users = User.query.order_by(User.name).all()
+
+    return jsonify([
+        {
+            "id": user.id,
+            "name": user.name,
+            "email": user.email
+        }
+        for user in users
+    ]), 200
 
 
 # customer routes
 
 @app.route("/api/customers", methods=["GET"])
+@jwt_required()
 def get_customers():
     customers = Customer.query.order_by(Customer.id).all()
 
@@ -89,6 +115,7 @@ def get_customers():
 
 
 @app.route("/api/customers", methods=["POST"])
+@jwt_required()
 def create_customer():
     data = request.get_json()
 
@@ -116,6 +143,7 @@ def create_customer():
 
 
 @app.route("/api/customers/<int:id>", methods=["PATCH"])
+@jwt_required()
 def update_customer(id):
     customer = db.session.get(Customer, id)
 
@@ -154,6 +182,7 @@ def update_customer(id):
 
 
 @app.route("/api/customers/<int:id>", methods=["DELETE"])
+@jwt_required()
 def delete_customer(id):
     customer = db.session.get(Customer, id)
 
@@ -169,6 +198,7 @@ def delete_customer(id):
 # ticket routes
 
 @app.route("/api/tickets", methods=["GET"])
+@jwt_required()
 def get_tickets():
     tickets = Ticket.query.order_by(Ticket.id).all()
 
@@ -190,6 +220,7 @@ def get_tickets():
 
 
 @app.route("/api/tickets/<int:id>", methods=["GET"])
+@jwt_required()
 def get_ticket(id):
     ticket = db.session.get(Ticket, id)
 
@@ -221,6 +252,7 @@ def get_ticket(id):
 
 
 @app.route("/api/tickets", methods=["POST"])
+@jwt_required()
 def create_ticket():
     data = request.get_json()
 
@@ -258,6 +290,7 @@ def create_ticket():
 
 
 @app.route("/api/tickets/<int:id>", methods=["PATCH"])
+@jwt_required()
 def update_ticket(id):
     ticket = db.session.get(Ticket, id)
 
@@ -281,7 +314,6 @@ def update_ticket(id):
             return jsonify({"error": "Assigned user not found"}), 404
         ticket.assigned_user_id = data["assigned_user_id"]
 
-    # let the model validators handle status and priority
     try:
         if "status" in data:
             ticket.status = data["status"]
@@ -298,11 +330,15 @@ def update_ticket(id):
         "status": ticket.status,
         "priority": ticket.priority,
         "customer_id": ticket.customer_id,
-        "assigned_user_id": ticket.assigned_user_id
+        "customer_name": ticket.customer.name,
+        "assigned_user_id": ticket.assigned_user_id,
+        "assigned_user_name": ticket.assigned_user.name if ticket.assigned_user else None,
+        "created_at": ticket.created_at.isoformat()
     }), 200
 
 
 @app.route("/api/tickets/<int:id>", methods=["DELETE"])
+@jwt_required()
 def delete_ticket(id):
     ticket = db.session.get(Ticket, id)
 
@@ -318,6 +354,7 @@ def delete_ticket(id):
 # ticket note routes
 
 @app.route("/api/tickets/<int:id>/notes", methods=["POST"])
+@jwt_required()
 def create_ticket_note(id):
     ticket = db.session.get(Ticket, id)
 
@@ -326,15 +363,18 @@ def create_ticket_note(id):
 
     data = request.get_json()
 
-    if not data.get("content") or not data.get("user_id"):
-        return jsonify({"error": "Content and user_id are required"}), 400
+    if not data.get("content"):
+        return jsonify({"error": "Content is required"}), 400
 
-    if not db.session.get(User, data["user_id"]):
+    # get the current user from the jwt token instead of trusting the request body
+    current_user_id = int(get_jwt_identity())
+
+    if not db.session.get(User, current_user_id):
         return jsonify({"error": "User not found"}), 404
 
     note = TicketNote(
         ticket_id=id,
-        user_id=data["user_id"],
+        user_id=current_user_id,
         content=data["content"]
     )
 
@@ -351,11 +391,17 @@ def create_ticket_note(id):
 
 
 @app.route("/api/notes/<int:id>", methods=["PATCH"])
+@jwt_required()
 def update_ticket_note(id):
     note = db.session.get(TicketNote, id)
 
     if not note:
         return jsonify({"error": "Note not found"}), 404
+
+    # make sure only the note's author can edit it
+    current_user_id = int(get_jwt_identity())
+    if note.user_id != current_user_id:
+        return jsonify({"error": "You can only edit your own notes"}), 403
 
     data = request.get_json()
 
@@ -375,32 +421,22 @@ def update_ticket_note(id):
 
 
 @app.route("/api/notes/<int:id>", methods=["DELETE"])
+@jwt_required()
 def delete_ticket_note(id):
     note = db.session.get(TicketNote, id)
 
     if not note:
         return jsonify({"error": "Note not found"}), 404
 
+    # make sure only the note's author can delete it
+    current_user_id = int(get_jwt_identity())
+    if note.user_id != current_user_id:
+        return jsonify({"error": "You can only delete your own notes"}), 403
+
     db.session.delete(note)
     db.session.commit()
 
     return jsonify({"message": "Note deleted successfully"}), 200
-
-
-# user routes (used for the assign ticket dropdown)
-
-@app.route("/api/users", methods=["GET"])
-def get_users():
-    users = User.query.order_by(User.name).all()
-
-    return jsonify([
-        {
-            "id": user.id,
-            "name": user.name,
-            "email": user.email
-        }
-        for user in users
-    ]), 200
 
 
 if __name__ == "__main__":

@@ -53,7 +53,7 @@ pip install -r requirements.txt
 
 ```
 DATABASE_URL=postgresql://your_user:your_password@localhost/supportdesk
-SECRET_KEY=your_secret_key
+JWT_SECRET_KEY=your_secret_key
 ```
 
 5. Create the PostgreSQL database

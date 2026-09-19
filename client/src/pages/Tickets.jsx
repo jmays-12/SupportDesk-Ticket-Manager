@@ -43,6 +43,8 @@ function Tickets() {
     // which ticket's notes section is expanded
     const [expandedTicketId, setExpandedTicketId] = useState(null)
 
+    const capitalize = (string) => string.charAt(0).toUpperCase() + string.slice(1)
+
     useEffect(() => {
         Promise.all([
             fetch('http://localhost:5000/api/tickets').then((r) => r.json()),
@@ -314,11 +316,11 @@ function Tickets() {
                                     <div className="flex items-start justify-between gap-4">
                                         <div className="flex-1">
                                             <h2 className="font-semibold text-gray-900">
-                                                {ticket.subject}
+                                                {capitalize(ticket.subject)}
                                             </h2>
 
                                             <p className="mt-1 text-sm text-gray-600">
-                                                {ticket.description}
+                                                {capitalize(ticket.description)}
                                             </p>
 
                                             <p className="mt-2 text-sm text-gray-500">
@@ -397,11 +399,11 @@ function Tickets() {
                                             {editingTicketId !== ticket.id && (
                                                 <>
                                                     <span className={`rounded border px-2 py-1 text-xs ${statusStyles[ticket.status]}`}>
-                                                        {ticket.status.replace('_', ' ')}
+                                                        {capitalize(ticket.status.replace('_', ' '))}
                                                     </span>
 
                                                     <span className={`rounded border px-2 py-1 text-xs ${priorityStyles[ticket.priority]}`}>
-                                                        {ticket.priority}
+                                                        {capitalize(ticket.priority)}
                                                     </span>
                                                 </>
                                             )}
