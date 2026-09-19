@@ -48,8 +48,6 @@ function Tickets({ currentUser, onLogout }) {
     const [editNoteContent, setEditNoteContent] = useState('')
     const [editNoteError, setEditNoteError] = useState('')
 
-    // helper to capitalize strings
-    const capitalize = (string) => string.charAt(0).toUpperCase() + string.slice(1)
 
     useEffect(() => {
         Promise.all([
@@ -402,15 +400,15 @@ function Tickets({ currentUser, onLogout }) {
                                 <div key={ticket.id} className="rounded border p-4">
                                     <div className="flex items-start justify-between gap-4">
                                         <div className="flex-1">
-                                            <h2 className="font-semibold text-gray-900">
-                                                {capitalize(ticket.subject)}
+                                            <h2 className="font-semibold text-gray-900 capitalize">
+                                                {ticket.subject}
                                             </h2>
 
-                                            <p className="mt-1 text-sm text-gray-600">
-                                                {capitalize(ticket.description)}
+                                            <p className="mt-1 text-sm text-gray-600 capitalize">
+                                                {ticket.description}
                                             </p>
 
-                                            <p className="mt-2 text-sm text-gray-500">
+                                            <p className="mt-2 text-sm text-gray-500 capitalize">
                                                 Customer: {ticket.customer_name}
                                             </p>
 
@@ -475,12 +473,12 @@ function Tickets({ currentUser, onLogout }) {
                                         <div className="flex shrink-0 flex-col items-end gap-2">
                                             {editingTicketId !== ticket.id && (
                                                 <>
-                                                    <span className={`rounded border px-2 py-1 text-xs ${statusStyles[ticket.status]}`}>
-                                                        {capitalize(ticket.status.replace('_', ' '))}
+                                                    <span className={`rounded border capitalize px-2 py-1 text-xs ${statusStyles[ticket.status]}`}>
+                                                        {ticket.status.replace('_', ' ')}
                                                     </span>
 
-                                                    <span className={`rounded border px-2 py-1 text-xs ${priorityStyles[ticket.priority]}`}>
-                                                        {capitalize(ticket.priority)}
+                                                    <span className={`rounded border capitalize px-2 py-1 text-xs ${priorityStyles[ticket.priority]}`}>
+                                                        {ticket.priority}
                                                     </span>
                                                 </>
                                             )}
