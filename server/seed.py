@@ -7,6 +7,7 @@ def seed_database():
         print("Clearing existing data...")
 
         # Delete in dependency order
+        # Notes reference tickets and users, so they must be deleted first.
         TicketNote.query.delete()
         Ticket.query.delete()
         Customer.query.delete()
@@ -115,7 +116,7 @@ def seed_database():
 
             Ticket(
                 subject="How do I change my email?",
-                description="I need to update the email address associated with my account.",
+                description="I need to update my email address",
                 status="closed",
                 priority="low",
                 customer_id=customer5.id,
@@ -124,16 +125,16 @@ def seed_database():
 
             Ticket(
                 subject="Password reset request",
-                description="Customer requested assistance resetting their password.",
+                description="Customer requested assistance resetting their password",
                 status="in_progress",
                 priority="medium",
                 customer_id=customer1.id,
-                assigned_user_id=test_user
+                assigned_user_id=test_user.id
             ),
 
             Ticket(
                 subject="Unable to upload attachment",
-                description="The customer receives an error when attempting to upload a PDF attachment.",
+                description="The customer receives an error when attempting to upload a PDF attachment",
                 status="open",
                 priority="medium",
                 customer_id=customer2.id,
@@ -142,7 +143,7 @@ def seed_database():
 
             Ticket(
                 subject="Incorrect account information",
-                description="Customer reports that their account information is displaying incorrectly.",
+                description="Customer reports that their account information is displaying incorrectly",
                 status="open",
                 priority="low",
                 customer_id=customer3.id,
@@ -151,6 +152,61 @@ def seed_database():
         ]
 
         db.session.add_all(tickets)
+        db.session.commit()
+
+        print("Creating ticket notes...")
+
+        notes = [
+            TicketNote(
+                ticket_id=tickets[0].id,
+                user_id=admin.id,
+                content="This issue is affecting the entire team"
+            ),
+
+            TicketNote(
+                ticket_id=tickets[0].id,
+                user_id=test_user.id,
+                content="Confirmed that multiple users are experiencing the same issue."
+            ),
+
+            TicketNote(
+                ticket_id=tickets[1].id,
+                user_id=test_user.id,
+                content="Customer reports that the password reset link did not resolve the issue."
+            ),
+
+            TicketNote(
+                ticket_id=tickets[2].id,
+                user_id=admin.id,
+                content="Looking into server performance and recent deployments."
+            ),
+
+            TicketNote(
+                ticket_id=tickets[3].id,
+                user_id=test_user.id,
+                content="Reviewing the customer's invoice and billing history."
+            ),
+
+            TicketNote(
+                ticket_id=tickets[4].id,
+                user_id=admin.id,
+                content="Customer was provided instructions for updating their email address."
+            ),
+
+            TicketNote(
+                ticket_id=tickets[5].id,
+                user_id=test_user.id,
+                content="Password reset instructions have been sent to the customer."
+            ),
+
+            TicketNote(
+                ticket_id=tickets[6].id,
+                user_id=admin.id,
+                content="Checking the attachment upload requirements and file size limits."
+            ),
+        ]
+
+        db.session.add_all(notes)
         db.session.commit()
 
         print()
@@ -162,14 +218,14 @@ def seed_database():
         print()
         print("  test@test.com")
         print("  admin@supportdesk.com")
-        print("  user@supportdesk.com")
         print()
         print("Password for ALL accounts:")
         print("test")
         print()
         print(f"Created {len(tickets)} tickets.")
+        print(f"Created {len(notes)} ticket notes.")
         print("Includes critical, high, medium, and low priority tickets.")
-        print("===================================")
+        print("====================================")
 
 
 if __name__ == "__main__":
