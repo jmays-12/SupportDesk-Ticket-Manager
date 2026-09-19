@@ -1,10 +1,10 @@
 import Navbar from '../components/Navbar.jsx'
 
-function Dashboard() {
+function Dashboard({ currentUser, onLogout }) {
     document.title = "SupportDesk - Dashboard"
     return (
         <div className="min-h-screen bg-gray-100">
-            <Navbar />
+            <Navbar currentUser={currentUser} onLogout={onLogout} />
             <div className="mx-auto max-w-6xl pt-4">
                 <h1 className="text-3xl font-bold text-gray-900">
                     Dashboard

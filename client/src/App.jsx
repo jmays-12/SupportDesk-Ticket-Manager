@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import Dashboard from './pages/Dashboard'
 import Tickets from './pages/Tickets'
 import Customers from './pages/Customers'
@@ -36,8 +36,22 @@ function App() {
                         </ProtectedRoute>
                     }
                 />
-                <Route path="/tickets" element={<Tickets />} />
-                <Route path="/customers" element={<Customers />} />
+                <Route
+                    path="/tickets"
+                    element={
+                        <ProtectedRoute currentUser={currentUser}>
+                            <Tickets currentUser={currentUser} onLogout={handleLogout} />
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/customers"
+                    element={
+                        <ProtectedRoute currentUser={currentUser}>
+                            <Customers currentUser={currentUser} onLogout={handleLogout} />
+                        </ProtectedRoute>
+                    }
+                />
             </Routes>
         </BrowserRouter>
     )

@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
+import { apiFetch } from '../api.js'
+
 function Auth({ setCurrentUser }) {
     const navigate = useNavigate()
 
@@ -19,9 +21,8 @@ function Auth({ setCurrentUser }) {
     const handleSignup = async (event) => {
         event.preventDefault()
 
-        const response = await fetch('http://localhost:5000/api/signup', {
+        const response = await apiFetch('/api/signup', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ name, email, password }),
         })
 
@@ -44,9 +45,8 @@ function Auth({ setCurrentUser }) {
     const handleLogin = async (event) => {
         event.preventDefault()
 
-        const response = await fetch('http://localhost:5000/api/login', {
+        const response = await apiFetch('/api/login', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email: loginEmail, password: loginPassword }),
         })
 

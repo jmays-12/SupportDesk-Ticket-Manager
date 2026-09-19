@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react'
-import Navbar from '../components/Navbar'
 
-function Customers() {
+import Navbar from '../components/Navbar'
+import { apiFetch } from '../api.js'
+
+function Customers({ currentUser, onLogout }) {
 
     document.title = "SupportDesk - Customers"
 
@@ -28,7 +30,7 @@ function Customers() {
     const phoneRegex = /^[0-9+().\-\s]+$/
 
     useEffect(() => {
-        fetch('http://localhost:5000/api/customers')
+        apiFetch('/api/customers')
             .then((response) => response.json())
             .then((data) => {
                 setCustomers(data)
@@ -53,11 +55,8 @@ function Customers() {
             return
         }
 
-        const response = await fetch('http://localhost:5000/api/customers', {
+        const response = await apiFetch('/api/customers', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
             body: JSON.stringify({
                 name,
                 email,
@@ -108,11 +107,8 @@ function Customers() {
             return
         }
 
-        const response = await fetch(`http://localhost:5000/api/customers/${customerId}`, {
+        const response = await apiFetch(`/api/customers/${customerId}`, {
             method: 'PATCH',
-            headers: {
-                'Content-Type': 'application/json',
-            },
             body: JSON.stringify({
                 name: editName,
                 email: editEmail,
@@ -145,7 +141,7 @@ function Customers() {
             return
         }
 
-        const response = await fetch(`http://localhost:5000/api/customers/${customerId}`, {
+        const response = await apiFetch(`/api/customers/${customerId}`, {
             method: 'DELETE',
         })
 
@@ -163,7 +159,7 @@ function Customers() {
 
     return (
         <div className="min-h-screen bg-gray-100">
-            <Navbar />
+            <Navbar currentUser={currentUser} onLogout={onLogout} />
             <div className="mx-auto max-w-6xl">
                 <h1 className="text-3xl font-bold text-gray-900 pt-4">
                     Customers

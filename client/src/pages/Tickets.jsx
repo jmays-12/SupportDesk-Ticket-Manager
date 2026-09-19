@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react'
+
 import Navbar from '../components/Navbar'
+import { apiFetch } from '../api.js'
 
 const statusStyles = {
     open: 'bg-blue-50 text-blue-700 border-blue-200',
@@ -14,7 +16,7 @@ const priorityStyles = {
     critical: 'bg-red-100 text-red-900 border-red-400',
 }
 
-function Tickets() {
+function Tickets({ currentUser, onLogout }) {
     document.title = 'SupportDesk - Tickets'
 
     const [tickets, setTickets] = useState([])
@@ -47,9 +49,9 @@ function Tickets() {
 
     useEffect(() => {
         Promise.all([
-            fetch('http://localhost:5000/api/tickets').then((r) => r.json()),
-            fetch('http://localhost:5000/api/customers').then((r) => r.json()),
-            fetch('http://localhost:5000/api/users').then((r) => r.json()),
+            apiFetch('/api/tickets').then((r) => r.json()),
+            apiFetch('/api/customers').then((r) => r.json()),
+            apiFetch('/api/users').then((r) => r.json()),
         ])
             .then(([ticketsData, customersData, usersData]) => {
                 setTickets(ticketsData)
@@ -71,9 +73,8 @@ function Tickets() {
             return
         }
 
-        const response = await fetch('http://localhost:5000/api/tickets', {
+        const response = await apiFetch('/api/tickets', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 subject,
                 description,
@@ -87,7 +88,7 @@ function Tickets() {
         const data = await response.json()
 
         if (response.ok) {
-            fetch('http://localhost:5000/api/tickets')
+            apiFetch('/api/tickets')
                 .then((r) => r.json())
                 .then((ticketsData) => setTickets(ticketsData))
 
@@ -114,9 +115,8 @@ function Tickets() {
     }
 
     const handleSaveTicket = async (ticketId) => {
-        const response = await fetch(`http://localhost:5000/api/tickets/${ticketId}`, {
+        const response = await apiFetch(`/api/tickets/${ticketId}`, {
             method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 status: editStatus,
                 priority: editPriority,
@@ -141,7 +141,7 @@ function Tickets() {
 
         if (!confirmed) return
 
-        const response = await fetch(`http://localhost:5000/api/tickets/${ticketId}`, {
+        const response = await apiFetch(`/api/tickets/${ticketId}`, {
             method: 'DELETE',
         })
 
@@ -160,7 +160,7 @@ function Tickets() {
 
     return (
         <div className="min-h-screen bg-gray-100">
-            <Navbar />
+            <Navbar currentUser={currentUser} onLogout={onLogout} />
 
             <div className="mx-auto max-w-6xl p-8">
                 <div className="flex items-center justify-between">
@@ -332,7 +332,7 @@ function Tickets() {
                                                 <div className="mt-3 grid grid-cols-3 gap-3">
                                                     <div>
                                                         <label className="mb-1 block text-xs font-medium text-gray-500">
-                                                            Status
+                                                            Current Status
                                                         </label>
                                                         <select
                                                             value={editStatus}
